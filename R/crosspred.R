@@ -117,7 +117,7 @@ function(basis, model=NULL, coef=NULL, vcov=NULL, model.link=NULL, at=NULL,
     # IDENTIFY LAGS W/ SIGNIFICANT FITS
     z <- qnorm(1-(1-ci.level)/2)
     mat_z <- matfit/matse
-    sig_lags <- which(mat_z > z)
+    sig_lags <- which(abs(mat_z) > z)
 
     # CREATE THE MATRIX OF TRANSFORMED VARIABLES (DEPENDENT ON TYPE)
     Xpred <- mkXpred(type,basis,at,predvar,predlag,cen)
@@ -126,9 +126,13 @@ function(basis, model=NULL, coef=NULL, vcov=NULL, model.link=NULL, at=NULL,
     for (i in sig_lags) {
       Xpredall_screen <- Xpredall_screen + Xpred[i,,drop=FALSE]
     }
-    screenfit <- as.vector(Xpredall_screen %*% coef)
-    screense <- sqrt(pmax(0,rowSums((Xpredall_screen%*%vcov)*Xpredall_screen)))
-
+    
+    if (Xpredall_screen == 0) {
+      screenfit <- screense <- NA
+    } else {
+      screenfit <- as.vector(Xpredall_screen %*% coef)
+      screense <- sqrt(pmax(0,rowSums((Xpredall_screen%*%vcov)*Xpredall_screen)))
+    }
     names(screenfit) <- names(screense) <- predvar
   }
   
