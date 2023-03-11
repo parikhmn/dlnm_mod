@@ -120,16 +120,16 @@ function(basis, model=NULL, coef=NULL, vcov=NULL, model.link=NULL, at=NULL,
     sig_lags <- which(abs(mat_z) > z)
 
     # CREATE THE MATRIX OF TRANSFORMED VARIABLES (DEPENDENT ON TYPE)
-    Xpred <- mkXpred(type,basis,at,predvar,predlag,cen)
-    Xpredall_screen <- 0
-    
-    for (i in sig_lags) {
-      Xpredall_screen <- Xpredall_screen + Xpred[i,,drop=FALSE]
-    }
     
     if (length(sig_lags) == 0) {
       screenfit <- screense <- NA
     } else {
+      Xpred <- mkXpred(type,basis,at,predvar,predlag,cen)
+      Xpredall_screen <- 0
+      
+      for (i in seq(length(predlag))) {
+        Xpredall_screen <- Xpredall_screen + Xpred[i,,drop=FALSE]
+      }
       screenfit <- as.vector(Xpredall_screen %*% coef)
       screense <- sqrt(pmax(0,rowSums((Xpredall_screen%*%vcov)*Xpredall_screen)))
     }
