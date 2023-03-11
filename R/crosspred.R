@@ -128,7 +128,7 @@ function(basis, model=NULL, coef=NULL, vcov=NULL, model.link=NULL, at=NULL,
     }
     screenfit <- as.vector(Xpredall_screen %*% coef)
     screense <- sqrt(pmax(0,rowSums((Xpredall_screen%*%vcov)*Xpredall_screen)))
-    
+
     names(screenfit) <- names(screense) <- predvar
   }
   
