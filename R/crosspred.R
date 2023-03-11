@@ -4,7 +4,7 @@
 crosspred <-
 function(basis, model=NULL, coef=NULL, vcov=NULL, model.link=NULL, at=NULL,
   from=NULL, to=NULL, by=NULL, lag, bylag=1, cen=NULL, ci.level=0.95,
-  cumul=FALSE) {
+  cumul=FALSE, screen=FALSE) {
 #
 ################################################################################
 # DETERMINE THE TYPE OF MODEL AND CHECKS
@@ -108,6 +108,30 @@ function(basis, model=NULL, coef=NULL, vcov=NULL, model.link=NULL, at=NULL,
   # NAMES
   rownames(matfit) <- rownames(matse) <- predvar
   colnames(matfit) <- colnames(matse) <- outer("lag",predlag,paste,sep="")
+
+#
+################################################################################
+# PREDICTION OF RESTRICTED OVERALL EFFECT FOR SCREEN
+#
+  if (screen) {
+    # IDENTIFY LAGS W/ SIGNIFICANT FITS
+    z <- qnorm(1-(1-ci.level)/2)
+    mat_z <- matfit/matse
+    sig_lags <- which(mat_z > z)
+
+    # CREATE THE MATRIX OF TRANSFORMED VARIABLES (DEPENDENT ON TYPE)
+    Xpred <- mkXpred(type,basis,at,predvar,predlag,cen)
+    Xpredall_screen <- 0
+    
+    for (i in sig_lags) {
+      Xpredall_screen <- Xpredall_screen + Xpred[i,,drop=FALSE]
+    }
+    screenfit <- as.vector(Xpredall %*% coef)
+    screense <- sqrt(pmax(0,rowSums((Xpredall%*%vcov)*Xpredall)))
+    
+    names(screenfit) <- names(screense) <- predvar
+  }
+  
 #
 ################################################################################
 # PREDICTION OF OVERALL+CUMULATIVE EFFECTS
@@ -150,6 +174,7 @@ function(basis, model=NULL, coef=NULL, vcov=NULL, model.link=NULL, at=NULL,
   list <- c(list, list(lag=lag, bylag=bylag, coefficients=coef, vcov=vcov,
     matfit=matfit, matse=matse, allfit=allfit, allse=allse))
   if(cumul) list <- c(list, list(cumfit=cumfit, cumse=cumse))
+  if(screen) list <- c(list, list(screenfit=screenfit, screense=screense))
 #
   # MATRICES AND VECTORS WITH EXPONENTIATED EFFECTS AND CONFIDENCE INTERVALS
   z <- qnorm(1-(1-ci.level)/2)
@@ -167,6 +192,11 @@ function(basis, model=NULL, coef=NULL, vcov=NULL, model.link=NULL, at=NULL,
       list$cumRRlow <- exp(cumfit-z*cumse)
       list$cumRRhigh <- exp(cumfit+z*cumse)
     }
+    if(screen) {
+      list$screenRRfit <- exp(screenfit)
+      list$screenRRlow <- exp(screenfit-z*screense)
+      list$screenRRhigh <- exp(screenfit+z*screense)
+    }
   } else {
     list$matlow <- matfit-z*matse
     list$mathigh <- matfit+z*matse
@@ -177,6 +207,10 @@ function(basis, model=NULL, coef=NULL, vcov=NULL, model.link=NULL, at=NULL,
     if(cumul) {
       list$cumlow <- cumfit-z*cumse
       list$cumhigh <- cumfit+z*cumse
+    }
+    if(screen) {
+      list$screenlow <- screenfit-z*screense
+      list$screenhigh <- screenfit+z*screense
     }
   }
 #
