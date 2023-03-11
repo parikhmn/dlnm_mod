@@ -127,7 +127,7 @@ function(basis, model=NULL, coef=NULL, vcov=NULL, model.link=NULL, at=NULL,
       Xpredall_screen <- Xpredall_screen + Xpred[i,,drop=FALSE]
     }
     
-    if (Xpredall_screen == 0) {
+    if (length(sig_lags) == 0) {
       screenfit <- screense <- NA
     } else {
       screenfit <- as.vector(Xpredall_screen %*% coef)
